@@ -37,73 +37,19 @@ def setMenuUp(menuItem,menu,shortcut='Ctrl+X',statusTip='Exit',connection=None):
     return
 #=================================================================================
 
-def get_transformation_matrix(theta=45):
-    """
-    theta is the angle of the light sheet
-    """
-
-    theta = theta/360 * 2 * np.pi # in radians
-    hx = np.cos(theta)
-    sy = np.sin(theta)
-
-    S = np.array([[1, hx, 0],
-                  [0, sy, 0],
-                  [0, 0, 1]])
-
-    return S
+# The shear transform lives in shear_transform.py (Qt-free, tested); the 3D viewer imports it from here.
+from .shear_transform import get_transformation_matrix, get_transformation_coordinates  # noqa: F401
+from .shear_transform import perform_shear_transform as _perform_shear_transform
 
 
-def get_transformation_coordinates(I, theta):
-    negative_new_max = False
-    S = get_transformation_matrix(theta)
-    S_inv = np.linalg.inv(S)
-    mx, my = I.shape
-
-    four_corners = np.matmul(S, np.array([[0, 0, mx, mx],
-                                          [0, my, 0, my],
-                                          [1, 1, 1, 1]]))[:-1,:]
-    range_x = np.round(np.array([np.min(four_corners[0]), np.max(four_corners[0])])).astype(np.int)
-    range_y = np.round(np.array([np.min(four_corners[1]), np.max(four_corners[1])])).astype(np.int)
-    all_new_coords = np.meshgrid(np.arange(range_x[0], range_x[1]), np.arange(range_y[0], range_y[1]))
-    new_coords = [all_new_coords[0].flatten(), all_new_coords[1].flatten()]
-    new_homog_coords = np.stack([new_coords[0], new_coords[1], np.ones(len(new_coords[0]))])
-    old_coords = np.matmul(S_inv, new_homog_coords)
-    old_coords = old_coords[:-1, :]
-    old_coords = old_coords
-    old_coords[0, old_coords[0, :] >= mx-1] = -1
-    old_coords[1, old_coords[1, :] >= my-1] = -1
-    old_coords[0, old_coords[0, :] < 1] = -1
-    old_coords[1, old_coords[1, :] < 1] = -1
-    new_coords[0] -= np.min(new_coords[0])
-    keep_coords = np.logical_not(np.logical_or(old_coords[0] == -1, old_coords[1] == -1))
-    new_coords = [new_coords[0][keep_coords], new_coords[1][keep_coords]]
-    old_coords = [old_coords[0][keep_coords], old_coords[1][keep_coords]]
-    return old_coords, new_coords
+def _status(message):
+    print(message)
+    g.m.statusBar().showMessage(message)
 
 
 def perform_shear_transform(A, shift_factor, interpolate, datatype, theta, inputArrayOrder = [0, 3, 1, 2], displayArrayOrder = [3, 0, 1, 2]):
-    A = moveaxis(A, inputArrayOrder, [0, 1, 2, 3]) # INPUT
-    m1, m2, m3, m4 = A.shape
-    if interpolate:
-        A_rescaled = np.zeros((m1*int(shift_factor), m2, m3, m4))
-        for v in np.arange(m4):
-            print('Upsampling Volume #{}/{}'.format(v+1, m4))
-            g.m.statusBar().showMessage('Upsampling Volume #{}/{}'.format(v+1, m4))
-            A_rescaled[:, :, :, v] = rescale(A[:, :, :, v], (shift_factor, 1.), mode='constant', preserve_range=True)
-    else:
-        A_rescaled = np.repeat(A, shift_factor, axis=1)
-    mx, my, mz, mt = A_rescaled.shape
-    I = A_rescaled[:, :, 0, 0]
-    old_coords, new_coords = get_transformation_coordinates(I, theta)
-    old_coords = np.round(old_coords).astype(np.int)
-    new_mx, new_my = np.max(new_coords[0]) + 1, np.max(new_coords[1]) + 1
-
-    D = np.zeros((new_mx, new_my, mz, mt))
-    D[new_coords[0], new_coords[1], :, :] = A_rescaled[old_coords[0], old_coords[1], :, :]
-    E = moveaxis(D, [0, 1, 2, 3], displayArrayOrder) # AXIS INDEX CHANGED FROM INPUT TO MATCH KYLE'S CODE
-    #E = np.flip(E, 1)
-
-    return E
+    return _perform_shear_transform(A, shift_factor, interpolate, datatype, theta, inputArrayOrder=inputArrayOrder,
+                                    displayArrayOrder=displayArrayOrder, progress=_status)
 
 def getCorners(vol):
     z,x,y = vol.nonzero()
