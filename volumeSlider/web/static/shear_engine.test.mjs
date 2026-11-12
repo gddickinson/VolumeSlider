@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { ARRAY_ORDERS, fmaInt, moveaxis, roundHalfEven, shearTransform } from './shear_engine.js';
 import { readTiff } from './tiff_reader.js';
 import { layoutVolume } from './volume_layout.js';
-import { pluginArray } from './deskew_volume.js';
+import { outputVoxel, pluginArray } from './deskew_volume.js';
 
 const FIX = new URL('../../../tests/fixtures/', import.meta.url);
 const { cases, demo } = JSON.parse(readFileSync(new URL('shear_cases.json', FIX)));
@@ -26,8 +26,9 @@ assert.deepEqual(ARRAY_ORDERS[4], [0, 3, 1, 2]); assert.deepEqual(ARRAY_ORDERS[1
 
 for (const c of cases) {
   const A = { shape: c.shape, data: Float64Array.from(c.input) };
-  const E = shearTransform(A, { shiftFactor: c.shift_factor, theta: c.theta, inputOrder: c.input_order, displayOrder: c.display_order });
-  const tag = `theta ${c.theta}, shift ${c.shift_factor}, orders ${c.input_order}/${c.display_order}`;
+  const E = shearTransform(A, { shiftFactor: c.shift_factor, theta: c.theta, inputOrder: c.input_order, displayOrder: c.display_order,
+    upsampleAxis: c.upsample_axis });
+  const tag = `theta ${c.theta}, shift ${c.shift_factor}, orders ${c.input_order}/${c.display_order}, upsample axis ${c.upsample_axis}`;
   assert.deepEqual(E.shape, c.out_shape, `${tag}: shape`);
   for (let i = 0; i < E.data.length; i++) if (E.data[i] !== c.output[i]) assert.fail(`${tag}: element ${i} ${E.data[i]} != ${c.output[i]}`);
 }
@@ -42,4 +43,14 @@ for (const c of cases) {
 }
 assert.throws(() => shearTransform({ shape: [4, 1, 2, 3], data: new Float64Array(24) }, { theta: 0 }), /theta/);
 assert.throws(() => shearTransform({ shape: [4, 1, 2, 3], data: new Float64Array(24) }, { shiftFactor: 1.5 }), /shift/);
+assert.throws(() => shearTransform({ shape: [4, 1, 2, 3], data: new Float64Array(24) }, { upsampleAxis: 2 }), /upsample axis/);
+assert.ok(cases.some(c => c.upsample_axis === 0) && cases.some(c => c.upsample_axis === 1), 'fixtures cover both axes');
+{ // output voxel size: camera rows stretched -> grid = pixel / shift; scan steps stretched -> grid = pixel
+  const raw = { voxel: [0.2, 0.4, 0.4], unit: 'µm', scaleKnown: true }, o = { inputOrder: [0, 3, 1, 2], displayOrder: [3, 0, 1, 2] };
+  const rows = outputVoxel(raw, { ...o, shiftFactor: 2, upsampleAxis: 1 });
+  assert.deepEqual(rows.voxel, [0.2, 0.2, 0.4]); assert.match(rows.note, /consistent/);
+  const scan = outputVoxel({ ...raw, voxel: [0.8, 0.4, 0.4] }, { ...o, shiftFactor: 2, upsampleAxis: 0 });
+  assert.deepEqual(scan.voxel, [0.4, 0.4, 0.4]); assert.match(scan.note, /consistent/);
+  assert.match(outputVoxel(raw, { ...o, shiftFactor: 2, upsampleAxis: 0 }).note, /different/);
+}
 console.log(`shear_engine: ${cases.length} cases + the demo volume match NumPy exactly`);

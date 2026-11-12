@@ -25,14 +25,17 @@ FIX = ROOT / "tests" / "fixtures"
 DEMO = ROOT / "volumeSlider" / "web" / "static" / "demo" / "synthetic_lightsheet_raw.tif"
 QUIET = {"progress": lambda m: None}
 
-SHEAR_CASES = [  # (theta, shift factor, input order, display order, input shape)
-    (45, 1, [0, 3, 1, 2], [3, 0, 1, 2], (9, 2, 4, 6)),
-    (45, 2, [0, 3, 1, 2], [3, 0, 1, 2], (8, 1, 3, 7)),
-    (30, 3, [0, 3, 1, 2], [3, 0, 1, 2], (10, 2, 3, 5)),
-    (60, 2, [0, 3, 1, 2], [3, 0, 1, 2], (7, 2, 5, 6)),
-    (135, 1, [0, 3, 1, 2], [3, 0, 1, 2], (9, 1, 3, 8)),
-    (72.5, 2, [0, 1, 2, 3], [0, 1, 2, 3], (8, 6, 2, 3)),
-    (20, 1, [2, 0, 3, 1], [1, 3, 0, 2], (8, 3, 9, 2)),
+SHEAR_CASES = [  # (theta, shift factor, input order, display order, input shape, upsample axis)
+    (45, 1, [0, 3, 1, 2], [3, 0, 1, 2], (9, 2, 4, 6), 1),
+    (45, 2, [0, 3, 1, 2], [3, 0, 1, 2], (8, 1, 3, 7), 1),
+    (30, 3, [0, 3, 1, 2], [3, 0, 1, 2], (10, 2, 3, 5), 1),
+    (60, 2, [0, 3, 1, 2], [3, 0, 1, 2], (7, 2, 5, 6), 1),
+    (135, 1, [0, 3, 1, 2], [3, 0, 1, 2], (9, 1, 3, 8), 1),
+    (72.5, 2, [0, 1, 2, 3], [0, 1, 2, 3], (8, 6, 2, 3), 1),
+    (20, 1, [2, 0, 3, 1], [1, 3, 0, 2], (8, 3, 9, 2), 1),
+    (45, 2, [0, 3, 1, 2], [3, 0, 1, 2], (8, 1, 3, 7), 0),
+    (30, 3, [0, 3, 1, 2], [3, 0, 1, 2], (6, 2, 3, 9), 0),
+    (110, 2, [1, 0, 3, 2], [2, 3, 1, 0], (5, 7, 2, 4), 0),
 ]
 
 
@@ -45,10 +48,11 @@ def demo_planes():
 def shear_fixture():
     rng = np.random.default_rng(7)
     cases = []
-    for theta, sf, inp, disp, shape in SHEAR_CASES:
+    for theta, sf, inp, disp, shape, axis in SHEAR_CASES:
         A = rng.integers(0, 1000, shape).astype(float)
-        E = perform_shear_transform(A, sf, False, A.dtype, theta, inputArrayOrder=inp, displayArrayOrder=disp, **QUIET)
-        cases.append({"theta": theta, "shift_factor": sf, "input_order": inp, "display_order": disp,
+        E = perform_shear_transform(A, sf, False, A.dtype, theta, inputArrayOrder=inp, displayArrayOrder=disp,
+                                    upsample_axis=axis, **QUIET)
+        cases.append({"theta": theta, "shift_factor": sf, "input_order": inp, "display_order": disp, "upsample_axis": axis,
                       "shape": list(shape), "input": A.ravel().astype(int).tolist(),
                       "out_shape": list(E.shape), "output": E.ravel().astype(int).tolist()})
     E = perform_shear_transform(demo_planes(), 2, False, float, 45, **QUIET)

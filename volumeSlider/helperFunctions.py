@@ -40,6 +40,7 @@ def setMenuUp(menuItem,menu,shortcut='Ctrl+X',statusTip='Exit',connection=None):
 # The shear transform lives in shear_transform.py (Qt-free, tested); the 3D viewer imports it from here.
 from .shear_transform import get_transformation_matrix, get_transformation_coordinates  # noqa: F401
 from .shear_transform import perform_shear_transform as _perform_shear_transform
+from .shear_transform import DEFAULT_DISPLAY_ORDER, DEFAULT_INPUT_ORDER
 
 
 def _status(message):
@@ -47,9 +48,10 @@ def _status(message):
     g.m.statusBar().showMessage(message)
 
 
-def perform_shear_transform(A, shift_factor, interpolate, datatype, theta, inputArrayOrder = [0, 3, 1, 2], displayArrayOrder = [3, 0, 1, 2]):
+def perform_shear_transform(A, shift_factor, interpolate, datatype, theta, inputArrayOrder=DEFAULT_INPUT_ORDER,
+                            displayArrayOrder=DEFAULT_DISPLAY_ORDER, upsample_axis=None):
     return _perform_shear_transform(A, shift_factor, interpolate, datatype, theta, inputArrayOrder=inputArrayOrder,
-                                    displayArrayOrder=displayArrayOrder, progress=_status)
+                                    displayArrayOrder=displayArrayOrder, progress=_status, upsample_axis=upsample_axis)
 
 def getCorners(vol):
     z,x,y = vol.nonzero()

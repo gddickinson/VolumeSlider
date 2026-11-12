@@ -359,7 +359,11 @@ To apply Gaussian smoothing:
 To correct for light sheet angle distortions:
 
 1. Set the "theta" value to match your light sheet angle (typically 45 degrees)
-2. Adjust "shift factor" to control the transformation magnitude
+2. Set "shift factor" and "shift factor stretches" from your pixel size and scan step: the shear needs the scan step
+   and the camera rows in one unit, so one of them is repeated "shift factor" times.
+   - camera rows (default): use when the camera pixel (in the sample) is at least the scan step;
+     shift factor = camera pixel / scan step.
+   - scan steps: use when the scan step is larger than the camera pixel; shift factor = scan step / camera pixel.
 3. These parameters affect how the data is transformed for visualization
 
 ### Input and Display Array Order

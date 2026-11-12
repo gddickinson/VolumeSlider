@@ -19,15 +19,19 @@ export function pluginArray(s, channel = 0) {
 const same = (a, b) => a.length === b.length && a.every((v, i) => v === b[i]);
 
 // Output voxel size. With the default array orders (input [0, 3, 1, 2], display [3, 0, 1, 2]) the transform adds the
-// scan step index to the upsampled row index (new = step + cos(theta) * row * shift), so both sheared axes are in grid
-// units of one camera row pixel / shift factor, and one scan step is taken to be one grid unit. Columns are unchanged.
-export function outputVoxel(raw, { shiftFactor, inputOrder, displayOrder }) {
+// scan step index to the row index (new = step + cos(theta) * row), after one of them was repeated shift-factor times.
+// Repeating rows (upsampleAxis 1, the plugin's default) makes the grid unit one camera row pixel / shift factor, and one
+// scan step is taken to be one grid unit; repeating scan steps (upsampleAxis 0) makes it one camera row pixel, and one
+// scan step is taken to be shift factor grid units. Columns are unchanged.
+export function outputVoxel(raw, { shiftFactor, inputOrder, displayOrder, upsampleAxis = 1 }) {
   if (!same(inputOrder, [0, 3, 1, 2]) || !same(displayOrder, [3, 0, 1, 2])) {
     return { voxel: [1, 1, 1], unit: 'grid', note: 'Non-default array orders: the output axes are shown in grid units.' };
   }
-  const grid = raw.voxel[1] / shiftFactor;
-  const note = `Grid unit = camera row pixel / shift factor = ${+grid.toPrecision(4)} ${raw.unit}. The transform treats one scan step as one grid unit` +
-    (raw.scaleKnown ? `; the file gives a step of ${+raw.voxel[0].toPrecision(4)} ${raw.unit}${Math.abs(raw.voxel[0] - grid) > 1e-6 * grid ? ' (different: check the shift factor)' : ' (consistent)'}.` : '.');
+  const rows = upsampleAxis === 1, grid = rows ? raw.voxel[1] / shiftFactor : raw.voxel[1], step = rows ? grid : grid * shiftFactor;
+  const p = x => +x.toPrecision(4);
+  const note = (rows ? `Grid unit = camera row pixel / shift factor = ${p(grid)} ${raw.unit}. The transform treats one scan step as one grid unit`
+    : `Grid unit = camera row pixel = ${p(grid)} ${raw.unit}. The transform treats one scan step as shift factor grid units (${p(step)} ${raw.unit})`) +
+    (raw.scaleKnown ? `; the file gives a step of ${p(raw.voxel[0])} ${raw.unit}${Math.abs(raw.voxel[0] - step) > 1e-6 * step ? ' (different: check the shift factor and which axis it stretches)' : ' (consistent)'}.` : '.');
   return { voxel: [grid, grid, raw.voxel[2]], unit: raw.unit, note };
 }
 
@@ -44,5 +48,5 @@ export function sampleFromOutput(E, raw, opts) {
   }
   const { voxel, unit, note } = outputVoxel(raw, opts);
   return { T, C: 1, size: [D, Bn, A], data, voxel, unit, scaleKnown: raw.scaleKnown && unit !== 'grid', names: ['deskewed'],
-    source: `shear transform (theta ${opts.theta}°, shift factor ${opts.shiftFactor})`, dtype: 'float64', note };
+    source: `shear transform (theta ${opts.theta}°, shift factor ${opts.shiftFactor} on the ${opts.upsampleAxis === 0 ? 'scan' : 'camera'} axis)`, dtype: 'float64', note };
 }

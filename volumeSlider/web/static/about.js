@@ -27,8 +27,9 @@ route('about', async () => {
     <li>Voxel sizes come from the file (ImageJ <code>spacing</code> / <code>unit</code> and X/YResolution, or OME PhysicalSizeX/Y/Z) and
     are shown in µm; a file without them is shown in pixels, and every size can be set by hand.</li>
     <li>Positions are voxel centres: voxel i spans i·d to (i + 1)·d, its position is (i + 0.5)·d.</li>
-    <li>Deskewed volumes (default array orders) are in grid units of camera row pixel / shift factor along the two sheared axes and one camera
-    pixel across; the transform treats one scan step as one grid unit.</li>
+    <li>Deskewed volumes (default array orders) are in grid units along the two sheared axes and one camera pixel across. When the shift
+    factor stretches camera rows (the plugin's default, for a camera pixel at least the scan step), the grid unit is camera row pixel / shift
+    factor and one scan step is one grid unit; when it stretches scan steps, the grid unit is one camera pixel and a step is shift factor units.</li>
     <li>The demo volumes are synthetic, made by <code>scripts/make_demo.py</code>; no microscope data ships with the repository.</li>
   </ul>
   <h2>Run it</h2>

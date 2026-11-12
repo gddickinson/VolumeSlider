@@ -26,13 +26,15 @@ route('deskew', async (args, query) => {
   scan step, and the transform slides every row of the tilted sheet back to where it belongs in the sample.</p>
   <div class="panel"><p class="eq">new<sub>0</sub> = a<sub>0</sub> + cos θ · a<sub>1</sub> &nbsp; · &nbsp; new<sub>1</sub> = sin θ · a<sub>1</sub></p>
   <p class="small mute">a<sub>0</sub>, a<sub>1</sub> are the first two axes after the input array order (by default: scan
-  step and image row), with a<sub>1</sub> first repeated "shift factor" times. Source pixels on the border of that plane
-  are dropped, as in the plugin. The result is moved by the display array order and shown as the plugin's 3D viewer
+  step and image row). Both must be in one unit, so "shift factor" first repeats one of them: camera rows when the
+  camera pixel is at least the scan step (shift factor = pixel / step, the plugin's default), or scan steps when the step
+  is larger (shift factor = step / pixel). Source pixels on the border of that plane are dropped, as in the plugin. The result is moved by the display array order and shown as the plugin's 3D viewer
   does: axis 0 = depth (z), axis 1 = volume, axis 2 across (x), axis 3 down (y). Interpolated upsampling is not offered:
   the plugin's 3D viewer always calls the transform with interpolate = False.</p></div>
   <div class="params">
     <div><label for="theta">theta (degrees, light-sheet angle)</label><input id="theta" type="number" min="1" max="179" step="any" value="${D.theta}"></div>
     <div><label for="shift">shift factor (whole number)</label><input id="shift" type="number" min="1" max="16" step="1" value="${D.shift_factor}"></div>
+    <div><label for="upax">shift factor stretches</label><select id="upax">${D.upsample_axis_choices.map((c, i) => `<option value="${i}" ${i === D.upsample_axis ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
     <div><label for="inord">input array order</label><select id="inord">${opts('in', D.input_order)}</select></div>
     <div><label for="disord">display array order</label><select id="disord">${opts('dis', D.display_order)}</select></div>
   </div>
@@ -47,7 +49,7 @@ route('deskew', async (args, query) => {
   const viewer = mountViewer($('viewer'));
   onLeave(() => viewer.stop());
   let raw = null, out = null, lastE = null, lastP = null;
-  const params = () => ({ theta: +$('theta').value, shiftFactor: Math.round(+$('shift').value),
+  const params = () => ({ theta: +$('theta').value, shiftFactor: Math.round(+$('shift').value), upsampleAxis: +$('upax').value,
     inputOrder: $('inord').value.split(',').map(Number), displayOrder: $('disord').value.split(',').map(Number) });
   const setOrder = (id, o) => { $(id).value = o.join(','); };
 
@@ -76,7 +78,7 @@ route('deskew', async (args, query) => {
   }
   $('run').addEventListener('click', run);
   $('reset').addEventListener('click', () => {
-    $('theta').value = D.theta; $('shift').value = D.shift_factor; setOrder('inord', D.input_order); setOrder('disord', D.display_order);
+    $('theta').value = D.theta; $('shift').value = D.shift_factor; $('upax').value = D.upsample_axis; setOrder('inord', D.input_order); setOrder('disord', D.display_order);
   });
   $('py').addEventListener('click', async () => {
     if (!lastE) return;
@@ -85,7 +87,7 @@ route('deskew', async (args, query) => {
     if (raw.file !== sheet.file || /re-split/.test(raw.source)) { box.innerHTML = '<p class="small mute">The Python check runs on the shipped light-sheet demo only.</p>'; return; }
     box.innerHTML = '<p class="mute">Running the Python transform…</p>';
     try {
-      const body = { theta: lastP.theta, shift_factor: lastP.shiftFactor, input_order: lastP.inputOrder, display_order: lastP.displayOrder };
+      const body = { theta: lastP.theta, shift_factor: lastP.shiftFactor, upsample_axis: lastP.upsampleAxis, input_order: lastP.inputOrder, display_order: lastP.displayOrder };
       const [r, mine] = await Promise.all([api('/shear/check', { body }), sha256(lastE.data)]);
       const okShape = r.shape.join() === lastE.shape.join(), okHash = r.sha256 === mine;
       box.innerHTML = `<table class="check"><tr><th></th><th>browser (JS)</th><th>plugin (Python / NumPy)</th></tr>

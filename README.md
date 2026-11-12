@@ -88,7 +88,7 @@ Process multiple files with the same parameters:
   PackBits; BigTIFF) and browse XY / ZY / XZ slices or max projections, a WebGL2 volume render and the volumes in
   time, all at the voxel size read from the file (or set by hand). "Slices per volume" re-splits a flat stack the way
   the plugin does.
-- **Deskew**: the plugin's light-sheet shear transform (theta, shift factor, input/display array orders), ported to
+- **Deskew**: the plugin's light-sheet shear transform (theta, shift factor and the axis it stretches, input/display array orders), ported to
   JavaScript; node tests check it against the Python voxel for voxel.
 - Two **synthetic** demo volumes (not microscope data), made by `scripts/make_demo.py`: a 4D cell and a raw oblique
   light-sheet scan of beads that the transform deskews.

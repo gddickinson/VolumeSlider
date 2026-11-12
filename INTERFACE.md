@@ -9,7 +9,7 @@ A flika plugin (`volumeSlider/`, loaded by flika from `info.xml`) plus a web int
 | `volumeSlider/volumeSlider_Main.py` | `CamVolumeSlider`: data handling, reshape to (slices, volumes, x, y), batch processing, `BatchOptions` |
 | `volumeSlider/volumeSlider_Main_GUI.py` | Main dialog: slices per volume, baseline, DF/F0, theta, shift factor, array-order combos |
 | `volumeSlider/volumeSlider_3DViewer.py` | 3D viewer docks (top-view max projection, X/Y/Z slices, free ROI, time slider), overlays, Gaussian, IMS export dialog |
-| `volumeSlider/shear_transform.py` | **Qt-free** shear transform: `get_transformation_matrix`, `get_transformation_coordinates`, `perform_shear_transform`, `ARRAY_ORDERS`, defaults |
+| `volumeSlider/shear_transform.py` | **Qt-free** shear transform: `get_transformation_matrix`, `get_transformation_coordinates`, `perform_shear_transform` (`upsample_axis`: SCAN_AXIS 0 / CAMERA_AXIS 1, default camera), `upsample_linear`, `ARRAY_ORDERS`, defaults |
 | `volumeSlider/helperFunctions.py` | GUI helpers, cube plotting; re-exports the shear transform with status-bar progress |
 | `volumeSlider/texturePlot.py`, `scatterPlot.py` | 3D texture-plane and thresholded-scatter plots (pyqtgraph.opengl) |
 | `volumeSlider/overlayOptions.py`, `*_classOverwrite*.py`, `histogramExtension.py` | Overlay controls, pyqtgraph subclass tweaks |
@@ -39,5 +39,6 @@ A flika plugin (`volumeSlider/`, loaded by flika from `info.xml`) plus a web int
 | `scripts/make_demo.py` | Writes `static/demo/*.tif` |
 | `scripts/make_fixtures.py` | Writes `tests/fixtures/` (shear cases, TIFF layouts + expected values) |
 | `scripts/build_static.py`, `scripts/screenshots.py` | Static export for GitHub Pages; Playwright smoke test / README images |
-| `tests/test_shear_transform.py` | Shear transform regression tests (np.int crash) |
+| `tests/test_shear_transform.py` | Shear transform regression tests (np.int crash, upsampling axis / interpolate) |
+| `tests/test_gui_settings.py` | Main dialog (Form2) shows and saves its shear settings (flika env only; g.settings swapped for a dict) |
 | `tests/test_web.py` | API, static build, node tests, fixtures and demos are current |

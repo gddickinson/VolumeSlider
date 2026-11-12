@@ -1,5 +1,6 @@
 // The plugin's light-sheet shear (deskew) transform, ported from volumeSlider/shear_transform.py
-// (perform_shear_transform with interpolate=False, the only mode the 3D viewer uses). Tested against the Python on the
+// (perform_shear_transform with interpolate=False, the only mode the 3D viewer uses; upsampleAxis 1 = camera rows,
+// the default, or 0 = scan steps). Tested against the Python on the
 // fixtures in tests/fixtures/shear_*.json by shear_engine.test.mjs, voxel for voxel.
 //
 // Numerical twins of NumPy, so the same source pixels are picked:
@@ -70,12 +71,16 @@ export function moveaxis(A, src, dst) {
   return { shape, data: out };
 }
 
-// perform_shear_transform(A, shift_factor, interpolate=False, theta, inputArrayOrder, displayArrayOrder)
-export function shearTransform(A, { shiftFactor = 1, theta = 45, inputOrder = [0, 3, 1, 2], displayOrder = [3, 0, 1, 2] } = {}) {
+// perform_shear_transform(A, shift_factor, interpolate=False, theta, inputArrayOrder, displayArrayOrder, upsample_axis)
+export const SCAN_AXIS = 0, CAMERA_AXIS = 1;
+export function shearTransform(A, { shiftFactor = 1, theta = 45, inputOrder = [0, 3, 1, 2], displayOrder = [3, 0, 1, 2],
+  upsampleAxis = CAMERA_AXIS } = {}) {
   if (!(theta > 0 && theta < 180)) throw new Error('theta must be between 0 and 180 degrees (exclusive)');
   if (!(Number.isInteger(shiftFactor) && shiftFactor >= 1)) throw new Error('shift factor must be a whole number >= 1');
+  if (upsampleAxis !== SCAN_AXIS && upsampleAxis !== CAMERA_AXIS) throw new Error('upsample axis must be 0 (scan) or 1 (camera)');
   const B = moveaxis(A, inputOrder, [0, 1, 2, 3]);
-  const [m1, m2, m3, m4] = B.shape, sf = shiftFactor, mx = m1, my = m2 * sf, inner = m3 * m4;
+  const [m1, m2, m3, m4] = B.shape, sf = shiftFactor, inner = m3 * m4;
+  const s0 = upsampleAxis === SCAN_AXIS ? sf : 1, s1 = upsampleAxis === CAMERA_AXIS ? sf : 1, mx = m1 * s0, my = m2 * s1;
   const { old0, old1, new0, new1 } = transformationCoordinates(mx, my, theta);
   if (!new0.length) throw new Error('The transform keeps no pixels: the volume is too small for these settings');
   let nmx = 0, nmy = 0;
@@ -83,8 +88,8 @@ export function shearTransform(A, { shiftFactor = 1, theta = 45, inputOrder = [0
   nmx += 1; nmy += 1;
   const D = new Float64Array(nmx * nmy * inner);
   for (let i = 0; i < new0.length; i++) {
-    // np.repeat(A, sf, axis=1): row j of the upsampled plane is row floor(j / sf) of the input
-    const src = (old0[i] * m2 + Math.floor(old1[i] / sf)) * inner, dst = (new0[i] * nmy + new1[i]) * inner;
+    // np.repeat(A, sf, axis): index j of the upsampled axis is index floor(j / sf) of the input
+    const src = (Math.floor(old0[i] / s0) * m2 + Math.floor(old1[i] / s1)) * inner, dst = (new0[i] * nmy + new1[i]) * inner;
     for (let k = 0; k < inner; k++) D[dst + k] = B.data[src + k];
   }
   return moveaxis({ shape: [nmx, nmy, m3, m4], data: D }, [0, 1, 2, 3], displayOrder);

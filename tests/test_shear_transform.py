@@ -60,3 +60,60 @@ def test_helper_functions_reexport():
     got = helperFunctions.perform_shear_transform(A, 1, False, A.dtype, 45)  # the 3D viewer's call
     np.testing.assert_array_equal(got, perform_shear_transform(A, 1, False, A.dtype, 45, progress=lambda m: None))
     assert helperFunctions.get_transformation_coordinates is get_transformation_coordinates
+
+
+# --- upsampling axis (2026-11-12) ---------------------------------------------------------------------------------
+# The shear new_a0 = a0 + cos(theta) * a1 needs a0 (scan step index) and a1 (camera row along the tilted sheet) in the
+# same unit. Repeating a1 r times makes the unit one scan step (r = camera pixel / scan step); upsampling a0 r times
+# makes it one camera pixel (r = scan step / camera pixel). interpolate=True used to upsample a0 while the default path
+# repeated a1, so one shift factor meant two opposite geometries (and interpolate=True crashed on scikit-image >= 0.19).
+QUIET = {"progress": lambda m: None}
+
+
+def _const_along(axis, shape=(6, 5, 2, 4), seed=3):
+    """A random plugin array B whose values do not change along `axis` of the input-ordered array A."""
+    A = np.random.default_rng(seed).random(shape)
+    A = np.repeat(np.take(A, [0], axis=axis), shape[axis], axis=axis)
+    return np.moveaxis(A, [0, 1, 2, 3], DEFAULT_INPUT_ORDER)  # back to B, so moveaxis(B, input order) == A
+
+
+@pytest.mark.parametrize("axis", [0, 1])
+def test_interpolate_upsamples_the_same_axis_as_repeat(axis):
+    B = _const_along(axis)
+    rep = perform_shear_transform(B, 2, False, B.dtype, 45, upsample_axis=axis, **QUIET)
+    lin = perform_shear_transform(B, 2, True, B.dtype, 45, upsample_axis=axis, **QUIET)
+    assert lin.shape == rep.shape
+    np.testing.assert_allclose(lin, rep, rtol=1e-12, atol=1e-12)
+
+
+def test_default_axis_is_the_camera_axis_in_both_paths():
+    B = np.random.default_rng(4).random((6, 2, 5, 4))
+    for interpolate in (False, True):
+        E = perform_shear_transform(B, 2, interpolate, B.dtype, 45, **QUIET)
+        E1 = perform_shear_transform(B, 2, interpolate, B.dtype, 45, upsample_axis=1, **QUIET)
+        np.testing.assert_array_equal(E, E1)
+    assert perform_shear_transform(B, 2, False, B.dtype, 45, **QUIET).shape == \
+        perform_shear_transform(B, 2, True, B.dtype, 45, **QUIET).shape
+
+
+def test_scan_axis_option_puts_features_at_their_physical_position():
+    """Scan step = 2 camera pixels, theta 60: two beads at the same lateral position but different depths are seen at
+    (step 4, row 2) and (step 3, row 6). Upsampling the scan axis by 2 lines them up; repeating rows does not."""
+    m0, m1 = 10, 10
+    A = np.zeros((m0, m1, 1, 1))
+    A[4, 2] = A[3, 6] = 1.0
+    B = np.moveaxis(A, [0, 1, 2, 3], DEFAULT_INPUT_ORDER)
+    E = perform_shear_transform(B, 2, False, B.dtype, 60, upsample_axis=0, **QUIET)
+    plane = np.moveaxis(E, DEFAULT_DISPLAY_ORDER, [0, 1, 2, 3])[:, :, 0, 0]
+    cols = sorted({int(c) for c in np.nonzero(plane)[0]})
+    assert max(cols) - min(cols) <= 1, cols
+    E_rows = perform_shear_transform(B, 2, False, B.dtype, 60, upsample_axis=1, **QUIET)
+    plane = np.moveaxis(E_rows, DEFAULT_DISPLAY_ORDER, [0, 1, 2, 3])[:, :, 0, 0]
+    cols = sorted({int(c) for c in np.nonzero(plane)[0]})
+    assert max(cols) - min(cols) >= 2, cols
+
+
+def test_bad_upsample_axis_is_rejected():
+    B = np.zeros((6, 1, 3, 4))
+    with pytest.raises(ValueError, match="upsample_axis"):
+        perform_shear_transform(B, 2, False, B.dtype, 45, upsample_axis=2, **QUIET)

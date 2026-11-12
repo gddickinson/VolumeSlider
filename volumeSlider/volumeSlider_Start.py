@@ -33,6 +33,7 @@ else:
 
 from .volumeSlider_Main import *
 from .helperFunctions import *
+from .shear_transform import DEFAULT_UPSAMPLE_AXIS, UPSAMPLE_AXIS_CHOICES
 from .tiffLoader import openTiff
 #########################################################################################
 #############          FLIKA Base Menu             #####################################
@@ -61,6 +62,7 @@ class VolumeSliderBase(BaseProcess_noPriorWindow):
             s['newDataType'] = 0
             s['theta'] = 45
             s['shiftFactor'] = 1
+            s['upsampleAxis'] = DEFAULT_UPSAMPLE_AXIS
             s['trimLastFrame'] = False
             s['inputArrayOrder'] = 4
             s['displayArrayOrder'] = 16

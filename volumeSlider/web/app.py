@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from ..shear_transform import (ARRAY_ORDERS, DEFAULT_DISPLAY_ORDER, DEFAULT_INPUT_ORDER, DEFAULT_SHIFT_FACTOR,
-                               DEFAULT_THETA, perform_shear_transform)
+                               DEFAULT_THETA, DEFAULT_UPSAMPLE_AXIS, UPSAMPLE_AXIS_CHOICES, perform_shear_transform)
 from .demo_volumes import CELL, SHEET
 from .volume_io import describe, read_volume
 
@@ -83,7 +83,7 @@ def shear_defaults():
     """The plugin's shear-transform settings: defaults and the 24 array orders of its drop-down menus."""
     return {"theta": DEFAULT_THETA, "shift_factor": DEFAULT_SHIFT_FACTOR, "input_order": DEFAULT_INPUT_ORDER,
             "display_order": DEFAULT_DISPLAY_ORDER, "array_orders": list(ARRAY_ORDERS.values()),
-            "interpolate": False}
+            "upsample_axis": DEFAULT_UPSAMPLE_AXIS, "upsample_axis_choices": UPSAMPLE_AXIS_CHOICES, "interpolate": False}
 
 
 class ShearParams(BaseModel):
@@ -91,6 +91,7 @@ class ShearParams(BaseModel):
     shift_factor: int = Field(SHEET["shift_factor"], ge=1, le=16)
     input_order: list[int] = DEFAULT_INPUT_ORDER
     display_order: list[int] = DEFAULT_DISPLAY_ORDER
+    upsample_axis: int = Field(DEFAULT_UPSAMPLE_AXIS, ge=0, le=1)
 
 
 def _shear_summary(p: ShearParams):
@@ -101,7 +102,8 @@ def _shear_summary(p: ShearParams):
     B = raw.transpose(1, 0, 3, 2).astype(float)  # the plugin's (slices, volumes, x, y)
     try:
         E = perform_shear_transform(B, p.shift_factor, False, B.dtype, p.theta, inputArrayOrder=p.input_order,
-                                    displayArrayOrder=p.display_order, progress=lambda m: None)
+                                    displayArrayOrder=p.display_order, upsample_axis=p.upsample_axis,
+                                    progress=lambda m: None)
     except ValueError as e:
         raise HTTPException(422, f"the transform keeps no pixels for these settings ({e})")
     return {"params": p.model_dump(), "shape": list(E.shape), "sum": float(E.sum()),

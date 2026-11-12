@@ -32,6 +32,7 @@ else:
     from flika.utils.BaseProcess import BaseProcess, SliderLabel, CheckBox, ComboBox, BaseProcess_noPriorWindow, WindowSelector, FileSelector
 
 from .helperFunctions import *
+from .shear_transform import DEFAULT_UPSAMPLE_AXIS, UPSAMPLE_AXIS_CHOICES
 from .pyqtGraph_classOverwrites import *
 from .scalebar_classOverwrite import Scale_Bar_volumeView
 from .histogramExtension import HistogramLUTWidget_Overlay
@@ -75,6 +76,7 @@ class Form2(QtWidgets.QDialog):
         self.displayArrayOrder = self.s['displayArrayOrder'] = 16
         self.theta = self.s['theta']
         self.shiftFactor = self.s['shiftFactor']
+        self.upsampleAxis = self.s.get('upsampleAxis', DEFAULT_UPSAMPLE_AXIS)
         self.trim_last_frame = self.s['trimLastFrame']
 
         #spinboxes
@@ -129,6 +131,12 @@ class Form2(QtWidgets.QDialog):
         self.SpinBox10 = QtWidgets.QSpinBox()
         self.SpinBox10.setRange(0,100)
         self.SpinBox10.setValue(self.shiftFactor)
+        # which axis the shift factor stretches (see shear_transform.py): depends on camera pixel vs scan step
+        self.upsampleAxisBox = QtWidgets.QComboBox()
+        self.upsampleAxisBox.addItems(UPSAMPLE_AXIS_CHOICES)
+        self.upsampleAxisBox.setCurrentIndex(self.upsampleAxis)
+        self.upsampleAxisBox.setToolTip('camera rows: shift factor = camera pixel / scan step\n'
+                                        'scan steps: shift factor = scan step / camera pixel')
 
 
         self.SpinBox11 = QtWidgets.QSpinBox()
@@ -262,6 +270,8 @@ class Form2(QtWidgets.QDialog):
 
         layout.addWidget(self.spinLabel10, 18, 0)
         layout.addWidget(self.SpinBox10, 18, 1)
+        layout.addWidget(QtWidgets.QLabel("shift factor stretches: "), 18, 2)
+        layout.addWidget(self.upsampleAxisBox, 18, 3)
         layout.addWidget(self.trim_last_frameLabel, 19, 0)
         layout.addWidget(self.trim_last_frame_checkbox, 19, 1)
 
@@ -286,6 +296,7 @@ class Form2(QtWidgets.QDialog):
         self.SpinBox1.valueChanged.connect(self.spinBox1ValueChange)
         self.SpinBox9.valueChanged.connect(self.setTheta)
         self.SpinBox10.valueChanged.connect(self.setShiftFactor)
+        self.upsampleAxisBox.currentIndexChanged.connect(self.setUpsampleAxis)
 
         #connect buttons
         self.button1.clicked.connect(self.autoLevel)
@@ -412,6 +423,9 @@ class Form2(QtWidgets.QDialog):
     def setShiftFactor(self):
         self.shiftFactor = self.SpinBox10.value()
 
+    def setUpsampleAxis(self, index):
+        self.upsampleAxis = index
+
     def trim_last_frameClicked(self):
         self.trim_last_frame = self.trim_last_frame_checkbox.isChecked()
 
@@ -433,6 +447,7 @@ class Form2(QtWidgets.QDialog):
         self.s['currentDataType'] = self.currentDataType
         self.s['newDataType'] = self.newDataType
         self.s['shiftFactor'] = self.shiftFactor
+        self.s['upsampleAxis'] = self.upsampleAxis
         self.s['trimLastFrame'] = self.trim_last_frame      
         self.s['f0VolStart'] = self.f0VolStart
         self.s['f0VolEnd'] = self.f0VolEnd 

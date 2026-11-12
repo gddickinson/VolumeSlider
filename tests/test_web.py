@@ -73,6 +73,7 @@ def test_shear_defaults_are_the_plugins():
     r = client.get("/api/shear/defaults").json()
     assert (r["theta"], r["shift_factor"], r["input_order"], r["display_order"]) == (45, 1, [0, 3, 1, 2], [3, 0, 1, 2])
     assert len(r["array_orders"]) == 24
+    assert r["upsample_axis"] == 1 and len(r["upsample_axis_choices"]) == 2
 
 
 def test_shear_check_matches_fixture_and_rejects_bad_input():
@@ -84,6 +85,10 @@ def test_shear_check_matches_fixture_and_rejects_bad_input():
     assert client.post("/api/shear/check", json={"input_order": [0, 0, 1, 2]}).status_code == 422
     r = client.post("/api/shear/check", json={"theta": 30, "shift_factor": 1}).json()
     assert r["shape"][1] == 3 and len(r["sha256"]) == 64
+    scan = client.post("/api/shear/check", json={"shift_factor": 2, "upsample_axis": 0}).json()
+    rows = client.post("/api/shear/check", json={"shift_factor": 2, "upsample_axis": 1}).json()
+    assert scan["shape"] != rows["shape"] and rows["shape"] == demo["out_shape"]
+    assert client.post("/api/shear/check", json={"upsample_axis": 2}).status_code == 422
 
 
 def test_describe_upload():
@@ -105,10 +110,12 @@ def test_fixtures_are_current():
     import make_fixtures
     from volumeSlider.web.volume_io import read_volume
     cases = json.loads((FIX / "shear_cases.json").read_text())
-    for c, (theta, sf, inp, disp, shape) in zip(cases["cases"], make_fixtures.SHEAR_CASES):
+    assert len(cases["cases"]) == len(make_fixtures.SHEAR_CASES)
+    for c, (theta, sf, inp, disp, shape, axis) in zip(cases["cases"], make_fixtures.SHEAR_CASES):
+        assert c["upsample_axis"] == axis
         A = np.array(c["input"], float).reshape(shape)
         E = make_fixtures.perform_shear_transform(A, sf, False, A.dtype, theta, inputArrayOrder=inp,
-                                                  displayArrayOrder=disp, progress=lambda m: None)
+                                                  displayArrayOrder=disp, upsample_axis=axis, progress=lambda m: None)
         assert list(E.shape) == c["out_shape"]
         # BLAS rounding may differ between platforms; allow a handful of re-picked source pixels
         assert np.mean(E.ravel() == np.array(c["output"])) > 0.99

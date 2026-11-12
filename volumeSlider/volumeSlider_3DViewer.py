@@ -66,13 +66,14 @@ class SliceViewer(BaseProcess):
 
         self.shift_factor = self.viewer.dialogbox.shiftFactor
         self.interpolate = False
+        self.upsample_axis = self.viewer.dialogbox.upsampleAxis  # shear_transform.SCAN_AXIS or CAMERA_AXIS
         self.theta = self.viewer.dialogbox.theta
         self.inputArrayOrder = self.viewer.getInputArrayOrder()
         self.displayArrayOrder = self.viewer.getDisplayArrayOrder()
 
         self.trim_last_frame = self.viewer.dialogbox.trim_last_frame
 
-        print('shift factor: '+ str(self.shift_factor))
+        print('shift factor: '+ str(self.shift_factor) + ' (upsampled axis: ' + str(self.upsample_axis) + ')')
         print('theta: ' + str(self.theta))
         print('input Array Order: '+ str(self.inputArrayOrder))
         print('display Array Order: ' + str(self.displayArrayOrder))
@@ -93,7 +94,7 @@ class SliceViewer(BaseProcess):
         self.nVols = self.originalDataShape[1]
         self.nSteps = self.originalDataShape[0]
 
-        self.originalData= perform_shear_transform(self.originalData, self.shift_factor, self.interpolate, self.originalData.dtype, self.theta, inputArrayOrder=self.inputArrayOrder,displayArrayOrder=self.displayArrayOrder)
+        self.originalData= perform_shear_transform(self.originalData, self.shift_factor, self.interpolate, self.originalData.dtype, self.theta, inputArrayOrder=self.inputArrayOrder,displayArrayOrder=self.displayArrayOrder, upsample_axis=self.upsample_axis)
         self.dataShape = self.originalData.shape
 
         self.height = self.dataShape[3]
@@ -731,7 +732,7 @@ class SliceViewer(BaseProcess):
         self.nVols = self.originalDataShape[1]
         self.nSteps = self.originalDataShape[0]
 
-        self.originalData= perform_shear_transform(self.originalData, self.shift_factor, self.interpolate, self.originalData.dtype, self.theta, inputArrayOrder=self.inputArrayOrder,displayArrayOrder=self.displayArrayOrder)
+        self.originalData= perform_shear_transform(self.originalData, self.shift_factor, self.interpolate, self.originalData.dtype, self.theta, inputArrayOrder=self.inputArrayOrder,displayArrayOrder=self.displayArrayOrder, upsample_axis=self.upsample_axis)
         self.dataShape = self.originalData.shape
 
         self.height = self.dataShape[3]
@@ -757,7 +758,7 @@ class SliceViewer(BaseProcess):
         g.m.statusBar().showMessage("Importing Array: " + A_path)
         self.A_overlay = np.load(str(A_path))
         #perform transform
-        self.A_overlay= perform_shear_transform(self.A_overlay, self.shift_factor, self.interpolate, self.originalData.dtype, self.theta, inputArrayOrder=self.inputArrayOrder,displayArrayOrder=self.displayArrayOrder)
+        self.A_overlay= perform_shear_transform(self.A_overlay, self.shift_factor, self.interpolate, self.originalData.dtype, self.theta, inputArrayOrder=self.inputArrayOrder,displayArrayOrder=self.displayArrayOrder, upsample_axis=self.upsample_axis)
         #set flags
         self.overlayFlag = True      
         self.overlayArrayLoaded = True
@@ -1015,7 +1016,7 @@ class SliceViewer(BaseProcess):
         else:                        
             self.A_overlay = self.viewer.getVolumeArray(self.currentVolume)
             #perform transform
-            self.A_overlay= perform_shear_transform(self.A_overlay, self.shift_factor, self.interpolate, self.originalData.dtype, self.theta, inputArrayOrder=self.inputArrayOrder,displayArrayOrder=self.displayArrayOrder)
+            self.A_overlay= perform_shear_transform(self.A_overlay, self.shift_factor, self.interpolate, self.originalData.dtype, self.theta, inputArrayOrder=self.inputArrayOrder,displayArrayOrder=self.displayArrayOrder, upsample_axis=self.upsample_axis)
             #set flags
             self.overlayFlag = True      
             self.overlayArrayLoaded = True

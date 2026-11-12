@@ -6,9 +6,21 @@ in NumPy 1.24, and every call crashed with AttributeError on a current NumPy.
 
 Array layout (the plugin's): B has shape (slices per volume, volumes, x, y), as built by
 CamVolumeSlider.updateDisplay_volumeSizeChange. `inputArrayOrder` moves those axes to (a0, a1, a2, a3); the shear acts
-in the (a0, a1) plane: new_a0 = a0 + cos(theta) * a1, new_a1 = sin(theta) * a1, after a1 has been repeated
-`shift_factor` times (or a0 upsampled by `shift_factor` when interpolate=True). `displayArrayOrder` then moves the
+in the (a0, a1) plane: new_a0 = a0 + cos(theta) * a1, new_a1 = sin(theta) * a1. `displayArrayOrder` then moves the
 result's axes; the 3D viewer reads it as (depth, volume, image axis 1, image axis 2).
+
+Which axis the shift factor upsamples (`upsample_axis`). With the default input order a0 is the scan step (one frame per
+step) and a1 the camera axis that lies along the tilted sheet. A voxel at step k, camera row p sits at lateral position
+k * step + p * pixel * cos(theta) and depth p * pixel * sin(theta), so the shear is only right when a0 and a1 are in the
+same unit, and either axis can be stretched to get there:
+- CAMERA_AXIS (1, default): each camera row is repeated `shift_factor` times; the grid unit is one scan step, and
+  shift_factor = camera pixel size / scan step (for a camera pixel at least as large as the step).
+- SCAN_AXIS (0): each scan step is repeated `shift_factor` times; the grid unit is one camera pixel, and
+  shift_factor = scan step / camera pixel size (for a step larger than the pixel).
+So the right choice depends on the acquisition. The default is the axis the plugin has always used (the 3D viewer only
+ever ran this path). `interpolate=True` upsamples the same axis by linear interpolation instead of repetition; it used
+to upsample a0 while the repeat path stretched a1 (so the same shift factor meant opposite geometries), and it crashed
+on scikit-image >= 0.19 (a 2-value scale for 3D blocks).
 """
 import numpy as np
 from numpy import moveaxis
@@ -23,6 +35,9 @@ DEFAULT_INPUT_ORDER = [0, 3, 1, 2]
 DEFAULT_DISPLAY_ORDER = [3, 0, 1, 2]
 DEFAULT_THETA = 45
 DEFAULT_SHIFT_FACTOR = 1
+SCAN_AXIS, CAMERA_AXIS = 0, 1
+DEFAULT_UPSAMPLE_AXIS = CAMERA_AXIS
+UPSAMPLE_AXIS_CHOICES = ['scan steps (step > camera pixel)', 'camera rows (camera pixel >= step)']  # index = axis
 
 
 def get_transformation_matrix(theta=45):
@@ -67,19 +82,32 @@ def get_transformation_coordinates(I, theta):
     return old_coords, new_coords
 
 
+def upsample_linear(A, factor, axis):
+    """Linear interpolation of A to `factor` times as many samples along `axis`, sampled at pixel centres (sample j of
+    the output sits at (j + 0.5) / factor - 0.5 of the input) and clamped at the edges, like skimage's rescale(order=1,
+    mode='edge'). Values constant along `axis` come out exactly as np.repeat(A, factor, axis) gives them."""
+    m = A.shape[axis]
+    x = np.clip((np.arange(m * factor) + 0.5) / factor - 0.5, 0, m - 1)
+    i0 = np.floor(x).astype(int)
+    i1 = np.minimum(i0 + 1, m - 1)
+    w = (x - i0).reshape([-1 if a == axis else 1 for a in range(A.ndim)])
+    return np.take(A, i0, axis=axis) * (1 - w) + np.take(A, i1, axis=axis) * w
+
+
 def perform_shear_transform(A, shift_factor, interpolate, datatype, theta, inputArrayOrder=DEFAULT_INPUT_ORDER,
-                            displayArrayOrder=DEFAULT_DISPLAY_ORDER, progress=print):
-    """Deskew a 4D array (see the module docstring for the axes). `progress(message)` reports upsampling steps."""
+                            displayArrayOrder=DEFAULT_DISPLAY_ORDER, progress=print, upsample_axis=None):
+    """Deskew a 4D array (see the module docstring for the axes). `upsample_axis` (SCAN_AXIS or CAMERA_AXIS, default
+    DEFAULT_UPSAMPLE_AXIS) is the axis stretched by `shift_factor`, by repetition or, with `interpolate`, linearly.
+    `progress(message)` reports upsampling steps."""
+    axis = DEFAULT_UPSAMPLE_AXIS if upsample_axis is None else upsample_axis
+    if axis not in (SCAN_AXIS, CAMERA_AXIS):
+        raise ValueError(f"upsample_axis must be {SCAN_AXIS} (scan step) or {CAMERA_AXIS} (camera row), not {axis!r}")
     A = moveaxis(A, inputArrayOrder, [0, 1, 2, 3]) # INPUT
-    m1, m2, m3, m4 = A.shape
     if interpolate:
-        from skimage.transform import rescale
-        A_rescaled = np.zeros((m1*int(shift_factor), m2, m3, m4))
-        for v in np.arange(m4):
-            progress('Upsampling Volume #{}/{}'.format(v+1, m4))
-            A_rescaled[:, :, :, v] = rescale(A[:, :, :, v], (shift_factor, 1.), mode='constant', preserve_range=True)
+        progress('Upsampling axis {} x{} (linear)'.format(axis, shift_factor))
+        A_rescaled = upsample_linear(np.asarray(A, dtype=float), int(shift_factor), axis)
     else:
-        A_rescaled = np.repeat(A, shift_factor, axis=1)
+        A_rescaled = np.repeat(A, shift_factor, axis=axis)
     mx, my, mz, mt = A_rescaled.shape
     I = A_rescaled[:, :, 0, 0]
     old_coords, new_coords = get_transformation_coordinates(I, theta)

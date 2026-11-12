@@ -13,3 +13,12 @@
   theta 45 deg / shift factor 2.
 - Open questions for George: see reports (interpolate branch upsamples axis 0 while the default path repeats axis 1;
   `BatchOptions` sets `displayArrayOrder = 16` unconditionally; README clone target nests the plugin one folder deep).
+
+## 2026-11-12: follow-up fixes (George: "make sensible choices")
+- **Fix**: `perform_shear_transform(interpolate=True)` upsampled axis 0 (scan step) while the default path repeated
+  axis 1 (camera row), so one shift factor meant opposite geometries; it also crashed on scikit-image >= 0.19 (a 2-value
+  scale for 3D blocks). Which axis is right depends on the acquisition (stretch camera rows when the camera pixel is at
+  least the scan step, shift = pixel / step; stretch scan steps when the step is larger, shift = step / pixel), so both
+  paths now take `upsample_axis` (default 1 = camera rows, what the 3D viewer has always done; results unchanged), and
+  interpolate is linear along that same axis. The main dialog has a "shift factor stretches" menu (setting
+  `upsampleAxis`); the web Deskew page and `/api/shear/check` have the same option (JS still voxel-identical: 10 cases).
