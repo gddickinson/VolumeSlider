@@ -80,6 +80,34 @@ Process multiple files with the same parameters:
 3. Select an input directory containing your files
 4. Start processing
 
+## Web interface
+
+**Live site: https://gddickinson.github.io/VolumeSlider/** (static, everything runs in your browser; nothing is uploaded)
+
+- **Viewer**: open a 3D/4D TIFF (ImageJ hyperstack, OME-TIFF or a plain page stack; uncompressed, LZW, Deflate or
+  PackBits; BigTIFF) and browse XY / ZY / XZ slices or max projections, a WebGL2 volume render and the volumes in
+  time, all at the voxel size read from the file (or set by hand). "Slices per volume" re-splits a flat stack the way
+  the plugin does.
+- **Deskew**: the plugin's light-sheet shear transform (theta, shift factor, input/display array orders), ported to
+  JavaScript; node tests check it against the Python voxel for voxel.
+- Two **synthetic** demo volumes (not microscope data), made by `scripts/make_demo.py`: a 4D cell and a raw oblique
+  light-sheet scan of beads that the transform deskews.
+
+![Viewer](docs/img/viewer.png)
+![Deskewed light-sheet scan](docs/img/deskew.png)
+![Raw scan, max projections](docs/img/raw_scan.png)
+
+### Run the web app
+
+```
+pip install -r requirements-web.txt
+python run_web.py          # http://127.0.0.1:8233
+```
+
+The local app adds Python cross-checks: reading your TIFF with tifffile, and running the plugin's shear transform on
+the demo to compare with the browser. Tests: `python -m pytest -q tests` (Python + node). The static site is built
+with `python scripts/build_static.py` and published by `.github/workflows/pages.yml` on every push to main.
+
 ## Plugin Structure
 
 - `volumeSlider_Start.py`: Entry point for the plugin
@@ -91,6 +119,8 @@ Process multiple files with the same parameters:
 - `texturePlot.py`: 3D texture visualization
 - `exportIMS.py`: Imaris file export functionality
 - `tiffLoader.py`: Functions to load TIFF files
+- `shear_transform.py`: the light-sheet shear transform (no Qt / flika; re-exported by `helperFunctions.py`)
+- `web/`: the web interface (see above)
 
 ## Troubleshooting
 
