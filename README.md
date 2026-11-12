@@ -12,7 +12,7 @@ VolumeSlider is a powerful plugin for [Flika](https://github.com/flika-org/flika
 - **Overlay Capabilities**: Compare multiple datasets by overlaying them with adjustable opacity and blending modes.
 - **ROI Analysis**: Analyze regions of interest with line profile tools and cross-sectional views.
 - **DF/F0 Calculation**: Calculate and visualize ratio changes for time series data.
-- **3D Visualization**: View your data in 3D using scatter plots, texture plots, and volume rendering.
+- **3D Visualization**: View your data in 3D using scatter plots and texture plots (textured orthogonal planes).
 - **Export Options**: Export data to various formats including Numpy arrays and Imaris (.ims) files.
 - **Batch Processing**: Process multiple files with consistent parameters for high-throughput analysis.
 
@@ -26,7 +26,7 @@ VolumeSlider is a powerful plugin for [Flika](https://github.com/flika-org/flika
 ### Setup
 1. Clone this repository into your Flika plugins directory:
 ```
-git clone https://github.com/your-username/flika-volumeSlider.git ~/.flika/plugins/volumeSlider
+git clone https://github.com/gddickinson/VolumeSlider.git ~/.flika/plugins/volumeSlider
 ```
 
 2. Start Flika and the plugin should appear in the plugins menu.
@@ -104,7 +104,7 @@ Contributions to improve VolumeSlider are welcome. Please feel free to submit pu
 
 ## License
 
-This plugin is released under the [MIT License](LICENSE.md).
+This plugin is released under the [MIT License](LICENSE).
 
 ## Acknowledgments
 
