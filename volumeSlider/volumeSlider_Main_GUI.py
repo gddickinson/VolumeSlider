@@ -32,7 +32,8 @@ else:
     from flika.utils.BaseProcess import BaseProcess, SliderLabel, CheckBox, ComboBox, BaseProcess_noPriorWindow, WindowSelector, FileSelector
 
 from .helperFunctions import *
-from .shear_transform import DEFAULT_UPSAMPLE_AXIS, UPSAMPLE_AXIS_CHOICES
+from .defaults import (ARRAY_ORDER_KEYS, DEFAULT_DISPLAY_ORDER, DEFAULT_INPUT_ORDER, DEFAULT_UPSAMPLE_AXIS,
+                       UPSAMPLE_AXIS_CHOICES, array_order_index)
 from .pyqtGraph_classOverwrites import *
 from .scalebar_classOverwrite import Scale_Bar_volumeView
 from .histogramExtension import HistogramLUTWidget_Overlay
@@ -72,8 +73,9 @@ class Form2(QtWidgets.QDialog):
         self.multiplicationFactor = self.s['multiplicationFactor']
         self.currentDataType = self.s['currentDataType']
         self.newDataType = self.s['newDataType']
-        self.inputArrayOrder = self.s['inputArrayOrder']
-        self.displayArrayOrder = self.s['displayArrayOrder'] = 16
+        # array orders are saved as menu indices; a missing or invalid entry falls back to defaults.py
+        self.inputArrayOrder = array_order_index(self.s.get('inputArrayOrder'), DEFAULT_INPUT_ORDER)
+        self.displayArrayOrder = array_order_index(self.s.get('displayArrayOrder'), DEFAULT_DISPLAY_ORDER)
         self.theta = self.s['theta']
         self.shiftFactor = self.s['shiftFactor']
         self.upsampleAxis = self.s.get('upsampleAxis', DEFAULT_UPSAMPLE_AXIS)
@@ -165,13 +167,15 @@ class Form2(QtWidgets.QDialog):
         self.dTypeSelectorBox.addItems(["float16", "float32", "float64","int8","int16","int32","int64"])
         self.inputArraySelectorBox = QtWidgets.QComboBox()
         self.inputArraySelectorBox.addItems(self.viewer.getArrayKeys())
-        self.inputArraySelectorBox.setCurrentIndex(4)
+        self.inputArraySelectorBox.setCurrentIndex(self.inputArrayOrder)
         self.inputArraySelectorBox.currentIndexChanged.connect(self.inputArraySelectionChange)
+        self.viewer.setInputArrayOrder(ARRAY_ORDER_KEYS[self.inputArrayOrder])  # the viewer uses what the menu shows
 
         self.displayArraySelectorBox = QtWidgets.QComboBox()
         self.displayArraySelectorBox.addItems(self.viewer.getArrayKeys())
-        self.displayArraySelectorBox.setCurrentIndex(18)
+        self.displayArraySelectorBox.setCurrentIndex(self.displayArrayOrder)
         self.displayArraySelectorBox.currentIndexChanged.connect(self.displayArraySelectionChange)
+        self.viewer.setDisplayArrayOrder(ARRAY_ORDER_KEYS[self.displayArrayOrder])
 
         #buttons
         self.button1 = QtWidgets.QPushButton("Autolevel")
@@ -431,10 +435,12 @@ class Form2(QtWidgets.QDialog):
 
     def inputArraySelectionChange(self, value):
         self.viewer.setInputArrayOrder(self.inputArraySelectorBox.currentText())
+        self.inputArrayOrder = self.s['inputArrayOrder'] = self.inputArraySelectorBox.currentIndex()
         return
 
     def displayArraySelectionChange(self, value):
         self.viewer.setDisplayArrayOrder(self.displayArraySelectorBox.currentText())
+        self.displayArrayOrder = self.s['displayArrayOrder'] = self.displayArraySelectorBox.currentIndex()
         return
 
     def saveSettings(self):
@@ -448,6 +454,8 @@ class Form2(QtWidgets.QDialog):
         self.s['newDataType'] = self.newDataType
         self.s['shiftFactor'] = self.shiftFactor
         self.s['upsampleAxis'] = self.upsampleAxis
+        self.s['inputArrayOrder'] = self.inputArrayOrder
+        self.s['displayArrayOrder'] = self.displayArrayOrder
         self.s['trimLastFrame'] = self.trim_last_frame      
         self.s['f0VolStart'] = self.f0VolStart
         self.s['f0VolEnd'] = self.f0VolEnd 

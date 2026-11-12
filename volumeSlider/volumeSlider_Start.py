@@ -33,7 +33,7 @@ else:
 
 from .volumeSlider_Main import *
 from .helperFunctions import *
-from .shear_transform import DEFAULT_UPSAMPLE_AXIS, UPSAMPLE_AXIS_CHOICES
+from .defaults import DEFAULT_SETTINGS
 from .tiffLoader import openTiff
 #########################################################################################
 #############          FLIKA Base Menu             #####################################
@@ -50,37 +50,7 @@ class VolumeSliderBase(BaseProcess_noPriorWindow):
     
     def __init__(self):
         if g.settings['volumeSlider'] is None or 'UPDATE' not in g.settings['volumeSlider']:
-            s = dict() 
-            s['inputChoice'] = 'Current Window'              
-            s['keepOriginalWindow'] = False   
-            s['slicesPerVolume'] =    1
-            s['baselineValue'] = 0
-            s['f0Start'] = 0
-            s['f0End'] = 0
-            s['multiplicationFactor'] = 100
-            s['currentDataType'] = 0
-            s['newDataType'] = 0
-            s['theta'] = 45
-            s['shiftFactor'] = 1
-            s['upsampleAxis'] = DEFAULT_UPSAMPLE_AXIS
-            s['trimLastFrame'] = False
-            s['inputArrayOrder'] = 4
-            s['displayArrayOrder'] = 16
-            s['f0VolStart'] = 0
-            s['f0VolEnd'] = 0  
-            s['IMS_fname'] ='IMS_export.ims'
-            s['IMS_subsamp'] = '((1, 1, 1), (1, 2, 2))'
-            s['IMS_chunks'] = '((16, 128, 128), (64, 64, 64))'
-            s['IMS_compression'] = 'gzip'
-            s['IMS_thumbsize'] = '256'
-            s['IMS_dx'] = 0.1
-            s['IMS_dz'] = 0.25
-            s['IMS_Unit'] = 'um'
-            s['IMS_GammaCorrection'] = 1
-            s['IMS_ColorRange'] =  '0 255'
-            s['IMS_LSMEmissionWavelength'] = 0
-            s['IMS_LSMExcitationWavelength'] = 0
-                            
+            s = dict(DEFAULT_SETTINGS)  # defaults.py
             g.settings['volumeSlider'] = s
                 
         BaseProcess_noPriorWindow.__init__(self)

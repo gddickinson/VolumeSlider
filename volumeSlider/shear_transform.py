@@ -25,19 +25,9 @@ on scikit-image >= 0.19 (a 2-value scale for 3D blocks).
 import numpy as np
 from numpy import moveaxis
 
-# The plugin's array-order choices (CamVolumeSlider.arrayDict) and defaults (volumeSlider_Main / volumeSlider_Start).
-ARRAY_ORDERS = {str(list(p)): list(p) for p in [
-    (0, 1, 2, 3), (0, 1, 3, 2), (0, 2, 1, 3), (0, 2, 3, 1), (0, 3, 1, 2), (0, 3, 2, 1),
-    (1, 0, 2, 3), (1, 0, 3, 2), (1, 2, 0, 3), (1, 2, 3, 0), (1, 3, 0, 2), (1, 3, 2, 0),
-    (2, 0, 1, 3), (2, 0, 3, 1), (2, 1, 0, 3), (2, 1, 3, 0), (2, 3, 0, 1), (2, 3, 1, 0),
-    (3, 0, 1, 2), (3, 0, 2, 1), (3, 1, 0, 2), (3, 1, 2, 0), (3, 2, 0, 1), (3, 2, 1, 0)]}
-DEFAULT_INPUT_ORDER = [0, 3, 1, 2]
-DEFAULT_DISPLAY_ORDER = [3, 0, 1, 2]
-DEFAULT_THETA = 45
-DEFAULT_SHIFT_FACTOR = 1
-SCAN_AXIS, CAMERA_AXIS = 0, 1
-DEFAULT_UPSAMPLE_AXIS = CAMERA_AXIS
-UPSAMPLE_AXIS_CHOICES = ['scan steps (step > camera pixel)', 'camera rows (camera pixel >= step)']  # index = axis
+# The plugin's array orders and shear defaults are defined once, in defaults.py.
+from .defaults import (ARRAY_ORDERS, CAMERA_AXIS, DEFAULT_DISPLAY_ORDER, DEFAULT_INPUT_ORDER,  # noqa: F401
+                       DEFAULT_SHIFT_FACTOR, DEFAULT_THETA, DEFAULT_UPSAMPLE_AXIS, SCAN_AXIS, UPSAMPLE_AXIS_CHOICES)
 
 
 def get_transformation_matrix(theta=45):

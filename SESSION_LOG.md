@@ -22,3 +22,9 @@
   paths now take `upsample_axis` (default 1 = camera rows, what the 3D viewer has always done; results unchanged), and
   interpolate is linear along that same axis. The main dialog has a "shift factor stretches" menu (setting
   `upsampleAxis`); the web Deskew page and `/api/shear/check` have the same option (JS still voxel-identical: 10 cases).
+- **Fix**: the main dialog and `BatchOptions` set `displayArrayOrder = s['displayArrayOrder'] = 16` on every open,
+  while the menus were hard-coded to index 18 (display, the order the viewer really used) and 4 (input), whatever the
+  setting said. Defaults now live only in `volumeSlider/defaults.py` (`DEFAULT_SETTINGS` uses index 18, i.e.
+  [3, 0, 1, 2], the order the plugin has always transformed with); the menus open at the saved setting, the viewer is
+  set to what the menus show, and a change is stored in the settings. Note: `volumeSlider_Start` still rewrites all
+  plugin settings at every flika start (its 'UPDATE' check never matches), so choices last for the flika session.

@@ -26,6 +26,7 @@ from OpenGL.GL import *
 from qtpy.QtCore import Signal
 import glob
 import gc
+from .defaults import ARRAY_ORDERS, DEFAULT_DISPLAY_ORDER, DEFAULT_INPUT_ORDER, array_order_index
 
 flika_version = flika.__version__
 if StrictVersion(flika_version) < StrictVersion('0.2.23'):
@@ -80,35 +81,9 @@ class CamVolumeSlider(BaseProcess):
         self.batch = False
 
         #create array order dict
-        self.arrayDict = {
-                '[0, 1, 2, 3]': [0, 1, 2, 3],
-                '[0, 1, 3, 2]': [0, 1, 3, 2],
-                '[0, 2, 1, 3]': [0, 2, 1, 3],
-                '[0, 2, 3, 1]': [0, 2, 3, 1],
-                '[0, 3, 1, 2]': [0, 3, 1, 2],
-                '[0, 3, 2, 1]': [0, 3, 2, 1],
-                '[1, 0, 2, 3]': [1, 0, 2, 3],
-                '[1, 0, 3, 2]': [1, 0, 3, 2],
-                '[1, 2, 0, 3]': [1, 2, 0, 3],
-                '[1, 2, 3, 0]': [1, 2, 3, 0],
-                '[1, 3, 0, 2]': [1, 3, 0, 2],
-                '[1, 3, 2, 0]': [1, 3, 2, 0],
-                '[2, 0, 1, 3]': [2, 0, 1, 3],
-                '[2, 0, 3, 1]': [2, 0, 3, 1],
-                '[2, 1, 0, 3]': [2, 1, 0, 3],
-                '[2, 1, 3, 0]': [2, 1, 3, 0],
-                '[2, 3, 0, 1]': [2, 3, 0, 1],
-                '[2, 3, 1, 0]': [2, 3, 1, 0],
-                '[3, 0, 1, 2]': [3, 0, 1, 2],
-                '[3, 0, 2, 1]': [3, 0, 2, 1],
-                '[3, 1, 0, 2]': [3, 1, 0, 2],
-                '[3, 1, 2, 0]': [3, 1, 2, 0],
-                '[3, 2, 0, 1]': [3, 2, 0, 1],
-                '[3, 2, 1, 0]': [3, 2, 1, 0]
-                }
-
-        self.inputArrayOrder = [0, 3, 1, 2]
-        self.displayArrayOrder = [3, 0, 1, 2]
+        self.arrayDict = dict(ARRAY_ORDERS)  # defaults.py
+        self.inputArrayOrder = list(DEFAULT_INPUT_ORDER)
+        self.displayArrayOrder = list(DEFAULT_DISPLAY_ORDER)
 
         #array savepath
         self.savePath = ''
@@ -417,8 +392,8 @@ class BatchOptions(QtWidgets.QDialog):
         self.multiplicationFactor = self.s['multiplicationFactor']
         self.currentDataType = self.s['currentDataType']
         self.newDataType = self.s['newDataType']
-        self.inputArrayOrder = self.s['inputArrayOrder']
-        self.displayArrayOrder = self.s['displayArrayOrder'] = 16
+        self.inputArrayOrder = array_order_index(self.s.get('inputArrayOrder'), DEFAULT_INPUT_ORDER)
+        self.displayArrayOrder = array_order_index(self.s.get('displayArrayOrder'), DEFAULT_DISPLAY_ORDER)
         self.theta = self.s['theta']
         self.shiftFactor = self.s['shiftFactor']
         self.trim_last_frame = self.s['trimLastFrame']  
