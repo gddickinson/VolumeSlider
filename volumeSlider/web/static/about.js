@@ -33,8 +33,9 @@ route('about', async () => {
     <li>The demo volumes are synthetic, made by <code>scripts/make_demo.py</code>; no microscope data ships with the repository.</li>
   </ul>
   <h2>Run it</h2>
-  <p>The plugin: clone the repository into flika's plugins folder (<code>~/.flika/plugins/volumeSlider</code>) and start flika; it appears under
-  Plugins → VolumeSlider. The web app (needs Python 3.10+):</p>
+  <p>The plugin: clone the repository, copy (or link) its inner <code>volumeSlider</code> folder, the one holding <code>info.xml</code>, to
+  flika's plugins folder as <code>~/.FLIKA/plugins/volumeSlider</code>, and start flika; it appears under Plugins → VolumeSlider. The web app
+  (needs Python 3.10+):</p>
   <pre>pip install -r requirements-web.txt
 python run_web.py          # http://127.0.0.1:8233</pre>
   <p>The local app adds two Python cross-checks: reading your TIFF with tifffile, and running the plugin's own shear transform on the demo to

@@ -28,3 +28,7 @@
   [3, 0, 1, 2], the order the plugin has always transformed with); the menus open at the saved setting, the viewer is
   set to what the menus show, and a change is stored in the settings. Note: `volumeSlider_Start` still rewrites all
   plugin settings at every flika start (its 'UPDATE' check never matches), so choices last for the flika session.
+- **Fix (docs)**: README, manual and the web About page told users to clone the repository into
+  `~/.flika/plugins/volumeSlider`, which puts `info.xml` at `.../volumeSlider/volumeSlider/info.xml`; flika only loads
+  plugin folders with `info.xml` at the top (`plugin_manager`), and its folder is `~/.FLIKA/plugins`. Now: clone
+  anywhere, copy or symlink the inner `volumeSlider` folder.

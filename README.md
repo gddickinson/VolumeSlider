@@ -24,12 +24,24 @@ VolumeSlider is a powerful plugin for [Flika](https://github.com/flika-org/flika
 - Required packages: numpy, PyQt5/PySide2, pyqtgraph, matplotlib, scikit-image, h5py, OpenGL
 
 ### Setup
-1. Clone this repository into your Flika plugins directory:
+1. Clone this repository anywhere outside Flika's plugins directory:
 ```
-git clone https://github.com/gddickinson/VolumeSlider.git ~/.flika/plugins/volumeSlider
+git clone https://github.com/gddickinson/VolumeSlider.git
 ```
 
-2. Start Flika and the plugin should appear in the plugins menu.
+2. Put the plugin itself, the inner `volumeSlider` folder (the one that holds `info.xml`), into Flika's plugins
+   directory, `~/.FLIKA/plugins` (Windows: `C:\Users\<you>\.FLIKA\plugins`). Flika only loads folders that have
+   `info.xml` at their top level, so cloning the repository straight into the plugins directory nests the plugin one
+   level too deep. Copy it:
+```
+cp -R VolumeSlider/volumeSlider ~/.FLIKA/plugins/volumeSlider
+```
+   or link it, so that `git pull` in the clone updates the plugin:
+```
+ln -s "$PWD/VolumeSlider/volumeSlider" ~/.FLIKA/plugins/volumeSlider
+```
+
+3. Start Flika and the plugin should appear in the plugins menu.
 
 ## Usage
 

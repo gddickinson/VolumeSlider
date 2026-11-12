@@ -60,10 +60,14 @@ This manual provides detailed instructions on how to use the VolumeSlider plugin
 ### Installation
 
 1. Ensure you have Flika installed (version 0.2.23 or newer recommended)
-2. Place the VolumeSlider plugin folder in your Flika plugins directory:
-   - Windows: `C:\Users\[username]\.Flika\plugins\volumeSlider`
-   - macOS: `/Users/[username]/.Flika/plugins/volumeSlider`
-   - Linux: `/home/[username]/.Flika/plugins/volumeSlider`
+2. Place the plugin folder, the repository's inner `volumeSlider` folder (the one containing `info.xml`), in your
+   Flika plugins directory, so that `info.xml` ends up directly inside it:
+   - Windows: `C:\Users\[username]\.FLIKA\plugins\volumeSlider\info.xml`
+   - macOS: `/Users/[username]/.FLIKA/plugins/volumeSlider/info.xml`
+   - Linux: `/home/[username]/.FLIKA/plugins/volumeSlider/info.xml`
+
+   Do not clone the whole repository into the plugins directory: that nests the plugin one folder too deep and Flika
+   does not find it (see the README for copy and link commands).
 3. Restart Flika if it's already running
 
 ### Launching the Plugin
